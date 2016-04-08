@@ -57,4 +57,27 @@ class UsersApiTest < Minitest::Test
 
     assert_equal [], JSON.parse(last_response.body)
   end
+
+  def test_returns_completion_for_specific_user_by_language
+    user = User.create(username: 'alice')
+    submission = Submission.create(user: user, language: 'ruby', slug: 'leap', solution: {'leap.rb' => 'CODE'})
+    UserExercise.create(user: user, submissions: [submission], language: 'ruby', slug: 'leap')
+
+    get '/users/alice/statistics'
+
+    response = { user:
+      { id: 1, username: user.username, email: nil, avatar_url: nil, github_id: nil
+      },
+      statistics: {
+          ruby: {
+            total: 66, completed: 1
+                },
+          javascript: {
+            total: 45, completed: 0
+                      }
+        }
+    }
+
+    assert_equal response, JSON.parse(last_response.body, symbolize_names: true)
+  end
 end

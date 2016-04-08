@@ -7,6 +7,22 @@ module ExercismAPI
         content_type :json
         UserLookup.new(params).lookup.to_json
       end
+
+      get '/users/:username/statistics' do |username|
+        response = { user:
+          { id: 1, username: "alice", email: nil, avatar_url: nil, github_id: nil
+          },
+          statistics: {
+              ruby: {
+                total: 66, completed: 1
+                    },
+              javascript: {
+                total: 45, completed: 0
+                          }
+            }
+        }
+        response.to_json
+      end
     end
   end
 end
