@@ -9,19 +9,13 @@ module ExercismAPI
       end
 
       get '/users/:username/statistics' do |username|
-        response = { user:
-          { id: 1, username: "alice", email: nil, avatar_url: nil, github_id: nil
-          },
-          statistics: {
-              ruby: {
-                total: 66, completed: 1
-                    },
-              javascript: {
-                total: 45, completed: 0
-                          }
-            }
-        }
-        response.to_json
+        user = User.find_by(username: username)
+        hash = { user: user.public_user_attributes }
+        statistics_hash = X::Track.all.map.with_object({}) do |track, statistics|
+          statistics[track.language] = {total: track.problems.count, completed: user.exercises.where(language: track.language.downcase).count }
+        end
+        hash[:statistics] = statistics_hash
+        hash.to_json
       end
     end
   end

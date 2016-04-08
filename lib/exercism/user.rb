@@ -148,6 +148,16 @@ class User < ActiveRecord::Base
     update_acls_for_track_mentor(language)
   end
 
+  def public_user_attributes
+    result = {}
+    result[:id] = self.attributes[:id]
+    result[:email] = self.attributes[:email]
+    result[:username] = self.attributes[:username]
+    result[:avatar_url] = self.attributes[:avatar_url]
+    result[:github_id] = self.attributes[:github_id]
+    result
+  end
+
   private
 
   def items_where(table, condition)

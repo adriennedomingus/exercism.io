@@ -61,23 +61,34 @@ class UsersApiTest < Minitest::Test
   def test_returns_completion_for_specific_user_by_language
     user = User.create(username: 'alice')
     submission = Submission.create(user: user, language: 'ruby', slug: 'leap', solution: {'leap.rb' => 'CODE'})
-    UserExercise.create(user: user, submissions: [submission], language: 'ruby', slug: 'leap')
+    UserExercise.create(user: user, submissions: [submission], language: 'ruby', slug: 'leap', iteration_count: 1)
+    submission2 = Submission.create(user: user, language: 'javascript', slug: 'leap', solution: {'leap.js' => 'CODE'})
+    UserExercise.create(user: user, submissions: [submission2], language: 'javascript', slug: 'leap', iteration_count: 1)
+    submission3 = Submission.create(user: user, language: 'ruby', slug: 'bob', solution: {'bob.rb' => 'CODE'})
+    UserExercise.create(user: user, submissions: [submission3], language: 'ruby', slug: 'bob', iteration_count: 1)
 
     get '/users/alice/statistics'
 
-    response = { user:
-      { id: 1, username: user.username, email: nil, avatar_url: nil, github_id: nil
-      },
-      statistics: {
-          ruby: {
-            total: 66, completed: 1
-                },
-          javascript: {
-            total: 45, completed: 0
-                      }
-        }
-    }
+    response = JSON.parse(last_response.body)
 
-    assert_equal response, JSON.parse(last_response.body, symbolize_names: true)
+    assert_equal 200, last_response.status
+    assert_equal 45, response["statistics"].count
+    assert_equal 2, response["statistics"]["Ruby"]["completed"]
+    assert_equal 1, response["statistics"]["JavaScript"]["completed"]
+
+    count = response["statistics"].select do |language, stats|
+      stats["completed"] == 0
+    end.count
+    assert_equal 43, count
+  end
+
+  def test_returns_error_for_nonexistant_user
+    get '/users/alice/statistics'
+
+    response = JSON.parse(last_response.body)
+    expected = "Sorry, something went wrong. We've been notified and will look into it."
+
+    assert_equal 500, last_response.status
+    assert_equal expected, response["error"]
   end
 end
