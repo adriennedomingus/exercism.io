@@ -89,8 +89,12 @@ class User < ActiveRecord::Base
     find_by(username: username)
   end
 
-  def self.find_by_persistent_cookie(cookies)
-    
+  def self.find_by_persistent_cookie(selector, token)
+    auth_token = AuthToken.find_by(selector: selector)
+    user = auth_token.user if auth_token
+    if user && user.token_digest == Digest::SHA256.hexdigest(token)
+      user
+    end
   end
 
   def sees_exercises?

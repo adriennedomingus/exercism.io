@@ -40,8 +40,8 @@ module ExercismWeb
       def logged_in_user
         if session[:github_id]
           User.find_by(github_id: session[:github_id])
-        elsif cookies[:selector] && cookies[:validator]
-          User.find_by_persistent_cookie(cookies[:selector], cookies[:validator])
+        elsif cookies[:token] && cookies[:validator]
+          User.find_by_persistent_cookie(cookies[:token], cookies[:validator])
         end
       end
     end

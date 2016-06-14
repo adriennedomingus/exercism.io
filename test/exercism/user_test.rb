@@ -79,6 +79,17 @@ class UserTest < Minitest::Test
     assert_equal %w(alice bob), User.find_in_usernames(%w(ALICE BOB)).map(&:username)
   end
 
+  def test_finds_user_by_persistent_cookies
+    user = User.create!(username: 'some_github_username',
+                        github_id: 1234,
+                        token_digest: Digest::SHA256.hexdigest("4567"))
+    auth_token = AuthToken.create(selector: "abcd", user_id: user.id)
+
+    result = User.find_by_persistent_cookie(auth_token.selector, "4567")
+
+    assert_equal(result, user)
+  end
+
   def test_create_users_unless_present
     User.create(username: 'alice')
     User.create(username: 'bob')
