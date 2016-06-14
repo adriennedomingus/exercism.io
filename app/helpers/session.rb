@@ -3,6 +3,9 @@ module ExercismWeb
     module Session
       def login(user)
         session[:github_id] = user.github_id
+        cookies[:token] = user.auth_token.selector
+        cookies[:validator] = SecureRandom.hex
+        user.update(token_digest: Digest::SHA256.hexdigest(cookies[:validator]))
         @current_user = user
       end
 
@@ -35,7 +38,11 @@ module ExercismWeb
       end
 
       def logged_in_user
-        User.find_by(github_id: session[:github_id]) if session[:github_id]
+        if session[:github_id]
+          User.find_by(github_id: session[:github_id])
+        elsif cookies[:selector] && cookies[:validator]
+          User.find_by_persistent_cookie(cookies[:selector], cookies[:validator])
+        end
       end
     end
   end

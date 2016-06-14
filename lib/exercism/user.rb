@@ -11,6 +11,8 @@ class User < ActiveRecord::Base
   has_many :daily_counts
   has_many :exercises, class_name: "UserExercise"
 
+  has_one :auth_token
+
   has_many :management_contracts, class_name: "TeamManager"
   has_many :managed_teams, through: :management_contracts, source: :team
   has_many :team_memberships, -> { where confirmed: true }, class_name: "TeamMembership", dependent: :destroy
@@ -50,12 +52,15 @@ class User < ActiveRecord::Base
     # GitHub ID will only be nil if the user has never logged in.
     user = User.where(username: username, github_id: nil).first if user.nil?
     user = User.new(github_id: id, email: email) if user.nil?
+
+    user.auth_token.create(selector: SecureRandom.hex, expiration: Time.now + 2592000) if user.nil?
+
     user.joined_as = joined_as if user.joined_as.nil? && !!joined_as
 
-    user.github_id  = id
-    user.email      = email unless user.email
-    user.username   = username
-    user.avatar_url = avatar_url.gsub(/\?.+$/, '') if avatar_url
+    user.github_id        = id
+    user.email            = email unless user.email
+    user.username         = username
+    user.avatar_url       = avatar_url.gsub(/\?.+$/, '') if avatar_url
     user.save
 
     conflict = User.where(username: username).first
@@ -63,6 +68,7 @@ class User < ActiveRecord::Base
       conflict.username = ''
       conflict.save
     end
+
     user
   end
   # rubocop:enable Metrics/AbcSize, Metrics/MethodLength, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
@@ -81,6 +87,10 @@ class User < ActiveRecord::Base
 
   def self.find_by_username(username)
     find_by(username: username)
+  end
+
+  def self.find_by_persistent_cookie(cookies)
+    
   end
 
   def sees_exercises?
