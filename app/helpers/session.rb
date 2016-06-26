@@ -3,14 +3,14 @@ module ExercismWeb
     module Session
       def login(user)
         session[:github_id] = user.github_id
-        cookies[:token] = user.auth_token.selector
-        cookies[:validator] = SecureRandom.hex
-        user.update(token_digest: Digest::SHA256.hexdigest(cookies[:validator]))
+        set_persistent_cookies(user)
         @current_user = user
       end
 
       def logout
         session.clear
+        cookies.delete(:token)
+        cookies.delete(:validator)
         @current_user = nil
       end
 
@@ -43,6 +43,14 @@ module ExercismWeb
         elsif cookies[:token] && cookies[:validator]
           User.find_by_persistent_cookie(cookies[:token], cookies[:validator])
         end
+      end
+
+      def set_persistent_cookies(user)
+        user.create_auth_token unless user.auth_token
+        cookies[:token] = user.auth_token.selector
+        cookies[:validator] = SecureRandom.hex
+        user.update(token_digest: Digest::SHA256.hexdigest(cookies[:validator]))
+        user.auth_token.update(expiration: Time.now + 2592000)
       end
     end
   end
