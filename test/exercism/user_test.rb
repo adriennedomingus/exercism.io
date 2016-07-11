@@ -83,7 +83,7 @@ class UserTest < Minitest::Test
     user = User.create!(username: 'some_github_username',
                         github_id: 1234,
                         token_digest: Digest::SHA256.hexdigest("4567"))
-    auth_token = AuthToken.create(selector: "abcd", user_id: user.id)
+    auth_token = AuthToken.create(selector: "abcd", user_id: user.id, expiration: Time.now + 2592000)
 
     result = User.find_by_persistent_cookie(auth_token.selector, "4567")
 

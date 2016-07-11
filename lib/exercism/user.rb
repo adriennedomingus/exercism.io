@@ -53,8 +53,7 @@ class User < ActiveRecord::Base
     user = User.where(username: username, github_id: nil).first if user.nil?
     user = User.new(github_id: id, email: email) if user.nil?
 
-    user.auth_token.create(selector: SecureRandom.hex, expiration: Time.now + 2592000) if user.nil?
-
+    user.create_auth_token unless user.auth_token
     user.joined_as = joined_as if user.joined_as.nil? && !!joined_as
 
     user.github_id        = id
@@ -92,9 +91,14 @@ class User < ActiveRecord::Base
   def self.find_by_persistent_cookie(selector, token)
     auth_token = AuthToken.find_by(selector: selector)
     user = auth_token.user if auth_token
-    if user && user.token_digest == Digest::SHA256.hexdigest(token)
+    if user && user.token_digest == Digest::SHA256.hexdigest(token) && auth_token.expiration > Time.now
       user
     end
+  end
+
+  def create_auth_token
+    self.auth_token =
+    AuthToken.create(selector: SecureRandom.hex, expiration: Time.now + 2592000)
   end
 
   def sees_exercises?
